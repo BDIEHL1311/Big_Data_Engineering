@@ -2,13 +2,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 
-# Initialize Spark Session
+# Spark-Session starten
 spark = SparkSession.builder \
     .appName("SSH-Honeypot-Analytics") \
     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0") \
     .getOrCreate()
 
-# Define schema for the JSON messages from Kafka
+# Schema für JSON aus Kafka definieren
 schema = StructType([
     StructField("timestamp", LongType(), True),
     StructField("datetime", StringType(), True),
@@ -19,7 +19,7 @@ schema = StructType([
     StructField("success", BooleanType(), True)
 ])
 
-# Read from Kafka
+# Kafka-Stream lesen
 df = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "kafka:9092") \
@@ -27,15 +27,16 @@ df = spark.readStream \
     .option("startingOffsets", "latest") \
     .load()
 
-# Parse JSON data and convert datetime to timestamp
+# JSON parsen und Datetime zu Timestamp konvertieren
 parsed_df = df.select(
     from_json(col("value").cast("string"), schema).alias("data")
 ).select("data.*") \
 .withColumn("event_time", to_timestamp(col("datetime"), "yyyy-MM-dd HH:mm:ss"))
 
-# Add watermark to handle late data
+# Watermark für Nachzügler hinzufügen
 df_watermark = parsed_df.withWatermark("event_time", "5 minutes")
 
+# Auswertungen
 # 1. Zugriffsversuche pro Land (5-Minuten-Fenster)
 country_counts = df_watermark \
     .groupBy(
