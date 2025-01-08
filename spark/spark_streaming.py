@@ -72,19 +72,32 @@ password_counts = df_watermark \
 
 # Funktion zum Speichern in MariaDB
 def save_to_mariadb(df, epoch_id, table_name):
-    try:
-        df.write \
-            .format("jdbc") \
-            .option("url", "jdbc:mysql://mariadb:3306/honeypot") \
-            .option("driver", "com.mysql.cj.jdbc.Driver") \
+    # Temporäre View erstellen
+    df.createOrReplaceTempView("updates")
+    
+    if table_name == "country_stats":
+        # Für country_stats: Update oder Insert basierend auf Primary Key
+        df._jdf.write().format("jdbc") \
+            .option("url", "jdbc:mariadb://mariadb:3306/honeypot") \
+            .option("driver", "org.mariadb.jdbc.Driver") \
             .option("dbtable", table_name) \
             .option("user", "root") \
             .option("password", "password") \
-            .mode("overwrite") \
+            .mode("append") \
             .save()
-        print(f"Successfully saved data to {table_name}")
-    except Exception as e:
-        print(f"Error saving to {table_name}: {str(e)}")
+    else:
+        # Für andere Tabellen: UPSERT Logik
+        df.write \
+            .format("jdbc") \
+            .option("url", "jdbc:mariadb://mariadb:3306/honeypot") \
+            .option("driver", "org.mariadb.jdbc.Driver") \
+            .option("dbtable", table_name) \
+            .option("user", "root") \
+            .option("password", "password") \
+            .option("sessionInitStatement", 
+                   "SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'") \
+            .mode("append") \
+            .save()
 
 # Streaming queries mit Error Handling
 try:
