@@ -1,5 +1,5 @@
 # SSH Honeypot Analytics
-Laborarbeit im Modul Big Data Engineering
+Laborarbeit im Modul Big Data Engineering an der DHBW Center for Advanced Studies
 
 [Demo Video](https://youtu.be/MppFt-uCNeg)
 
