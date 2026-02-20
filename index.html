@@ -20,6 +20,17 @@
       --radius: 14px;
     }
 
+    [data-theme="dark"] {
+      --bg: #0f1420;
+      --surface: #1a2232;
+      --text: #e9edf7;
+      --muted: #b5bfd2;
+      --primary: #6c95ff;
+      --primary-2: #547ee8;
+      --border: #2a3650;
+      --shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -72,6 +83,16 @@
       border-radius: 10px;
       padding: 8px 10px;
       color: var(--text);
+    }
+
+    .theme-btn {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 40px;
+      min-width: 42px;
+      cursor: pointer;
     }
 
     .content {
@@ -353,6 +374,8 @@
   const state = loadState();
   const app = document.getElementById('app');
 
+  applyTheme();
+
   render();
 
   function mkProd(id, name, category, attrs, stores, scores, priceRange) {
@@ -391,6 +414,7 @@
           selectedProductId: null,
           toast: '',
           communitySchemas: parsed.communitySchemas || defaultCommunity,
+          theme: parsed.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
           showNewSchemaForm: false,
           newSchema: { name: '', market: 'REWE', sectionsText: '' }
         };
@@ -407,6 +431,7 @@
       selectedProductId: null,
       toast: '',
       communitySchemas: defaultCommunity,
+      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
       showNewSchemaForm: false,
       newSchema: { name: '', market: 'REWE', sectionsText: '' }
     };
@@ -420,6 +445,8 @@
       prefs: state.prefs,
       listItems: state.listItems,
       sustainabilityView: state.sustainabilityView,
+      communitySchemas: state.communitySchemas,
+      theme: state.theme
       communitySchemas: state.communitySchemas
     }));
   }
@@ -458,6 +485,12 @@
     return `
       <header class="header">
         <div class="brand">🛒 EcoCart</div>
+        <div class="row" style="margin-left:auto;">
+          <button class="theme-btn" id="themeToggle" aria-label="Darkmode umschalten">${state.theme === 'dark' ? '☀️' : '🌙'}</button>
+          <select aria-label="Supermarkt" class="store-select" id="storeSelect">
+            ${Object.keys(schemasByStore).map(store => `<option ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
+          </select>
+        </div>
         <select aria-label="Supermarkt" class="store-select" id="storeSelect">
           ${Object.keys(schemasByStore).map(store => `<option ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
         </select>
@@ -473,6 +506,7 @@
         <p class="muted">Setze deine Prioritäten. Du kannst alles später im Profil ändern.</p>
         ${criterias.map(c => `
           <div class="slider-wrap">
+            <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
             <div class="spaced"><strong>${c.label}</strong><span>${pref[c.key]}</span></div>
             <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
           </div>
@@ -491,6 +525,21 @@
     return renderListTab();
   }
 
+  function renderSuggestionsHtml(searchTerm) {
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) return '';
+    const filtered = catalog
+      .filter(p => p.storeAvailability.includes(state.store) && p.name.toLowerCase().includes(term))
+      .slice(0, 8);
+    return filtered.map(p => `
+      <button class="sugg" data-open-product="${p.id}">
+        ${p.name}
+        ${state.store === 'REWE' ? `<span class="muted"> · ${p.attrs.brandType === 'eigenmarke' ? 'ja!' : (p.attrs.brandType === 'bio' ? 'REWE Bio' : 'Marke')}</span>` : ''}
+      </button>
+    `).join('') || '<div class="sugg">Keine Vorschläge</div>';
+  }
+
+  function renderListTab() {
   function renderListTab() {
     const filtered = catalog.filter(p => p.storeAvailability.includes(state.store) && p.name.toLowerCase().includes(state.search.toLowerCase()));
     const bySection = groupListItems();
@@ -501,6 +550,7 @@
         </div>
         <input class="input" id="searchInput" type="text" value="${escapeHtml(state.search)}" placeholder="z.B. Joghurt">
         <div class="suggestions ${state.search ? '' : 'hidden'}">
+          <div id="suggestionsList">${renderSuggestionsHtml(state.search)}</div>
           ${filtered.slice(0, 8).map(p => `
             <button class="sugg" data-open-product="${p.id}">
               ${p.name}
@@ -602,6 +652,7 @@
         <h3>Profil & Gewichte</h3>
         ${criterias.map(c => `
           <div class="slider-wrap">
+            <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
             <div class="spaced"><strong>${c.label}</strong><span>${pref[c.key]}</span></div>
             <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
           </div>
@@ -678,6 +729,12 @@
       persistRender();
     });
 
+    on('#themeToggle', 'click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      persistRender();
+    });
+
     document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
       state.tab = btn.dataset.tab;
       persistRender();
@@ -687,6 +744,8 @@
       sl.addEventListener('input', e => {
         if (!state.prefs) state.prefs = { ...defaultPrefs };
         state.prefs[e.target.dataset.slider] = Number(e.target.value);
+        const valueEl = document.querySelector(`[data-slider-value="${e.target.dataset.slider}"]`);
+        if (valueEl) valueEl.textContent = e.target.value;
         render();
       });
     });
@@ -699,6 +758,12 @@
 
     on('#searchInput', 'input', e => {
       state.search = e.target.value;
+      updateSuggestions();
+    });
+
+    bindSuggestionButtons();
+
+    const addFreeItem = () => {
       render();
     });
 
@@ -715,6 +780,10 @@
       state.search = '';
       persistRender();
       toast('Freitext-Item hinzugefügt');
+    };
+
+    on('#addFree', 'click', addFreeItem);
+    on('#freeName', 'keydown', e => { if (e.key === 'Enter') addFreeItem(); });
     });
 
     document.querySelectorAll('[data-add-product]').forEach(btn => btn.addEventListener('click', () => {
@@ -776,6 +845,31 @@
       toast('Community-Schema gespeichert');
       persistRender();
     });
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme || 'light');
+  }
+
+  function bindSuggestionButtons() {
+    document.querySelectorAll('[data-open-product]').forEach(btn => btn.addEventListener('click', () => {
+      state.selectedProductId = btn.dataset.openProduct;
+      render();
+    }));
+  }
+
+  function updateSuggestions() {
+    const suggestionsBox = document.querySelector('.suggestions');
+    const list = document.querySelector('#suggestionsList');
+    if (!suggestionsBox || !list) return;
+    const hasTerm = !!state.search.trim();
+    suggestionsBox.classList.toggle('hidden', !hasTerm);
+    if (!hasTerm) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = renderSuggestionsHtml(state.search);
+    bindSuggestionButtons();
   }
 
   function withBrandSignal(product) {
