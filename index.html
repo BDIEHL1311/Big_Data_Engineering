@@ -371,20 +371,12 @@
     { id: 'c4', name: 'Drogerie + Food', market: 'dm', votes: 77, version: '1.2', sections: ['Drogerie', 'Getränke', 'Trockenware', 'Kasse'] }
   ];
 
+  const state = loadState();
   const app = document.getElementById('app');
-  let state;
 
-  window.addEventListener('error', (event) => {
-    showFatal('Unerwarteter Fehler beim Laden', event.message);
-  });
+  applyTheme();
 
-  try {
-    state = loadState();
-    applyTheme();
-    render();
-  } catch (error) {
-    showFatal('Initialisierung fehlgeschlagen', error && error.message ? error.message : String(error));
-  }
+  render();
 
   function mkProd(id, name, category, attrs, stores, scores, priceRange) {
     return { id, name, category, attrs, storeAvailability: stores, scores, priceRange };
@@ -455,6 +447,7 @@
       sustainabilityView: state.sustainabilityView,
       communitySchemas: state.communitySchemas,
       theme: state.theme
+      communitySchemas: state.communitySchemas
     }));
   }
 
@@ -498,6 +491,9 @@
             ${Object.keys(schemasByStore).map(store => `<option ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
           </select>
         </div>
+        <select aria-label="Supermarkt" class="store-select" id="storeSelect">
+          ${Object.keys(schemasByStore).map(store => `<option ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
+        </select>
       </header>
     `;
   }
@@ -511,6 +507,7 @@
         ${criterias.map(c => `
           <div class="slider-wrap">
             <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
+            <div class="spaced"><strong>${c.label}</strong><span>${pref[c.key]}</span></div>
             <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
           </div>
         `).join('')}
@@ -543,6 +540,8 @@
   }
 
   function renderListTab() {
+  function renderListTab() {
+    const filtered = catalog.filter(p => p.storeAvailability.includes(state.store) && p.name.toLowerCase().includes(state.search.toLowerCase()));
     const bySection = groupListItems();
     return `
       <section class="card full">
@@ -552,6 +551,11 @@
         <input class="input" id="searchInput" type="text" value="${escapeHtml(state.search)}" placeholder="z.B. Joghurt">
         <div class="suggestions ${state.search ? '' : 'hidden'}">
           <div id="suggestionsList">${renderSuggestionsHtml(state.search)}</div>
+          ${filtered.slice(0, 8).map(p => `
+            <button class="sugg" data-open-product="${p.id}">
+              ${p.name}
+              ${state.store === 'REWE' ? `<span class="muted"> · ${p.attrs.brandType === 'eigenmarke' ? 'ja!' : (p.attrs.brandType === 'bio' ? 'REWE Bio' : 'Marke')}</span>` : ''}
+            </button>`).join('') || '<div class="sugg">Keine Vorschläge</div>'}
         </div>
 
         <div class="row" style="margin-top:12px">
@@ -649,6 +653,7 @@
         ${criterias.map(c => `
           <div class="slider-wrap">
             <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
+            <div class="spaced"><strong>${c.label}</strong><span>${pref[c.key]}</span></div>
             <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
           </div>
         `).join('')}
@@ -741,6 +746,7 @@
         state.prefs[e.target.dataset.slider] = Number(e.target.value);
         const valueEl = document.querySelector(`[data-slider-value="${e.target.dataset.slider}"]`);
         if (valueEl) valueEl.textContent = e.target.value;
+        render();
       });
     });
 
@@ -758,6 +764,15 @@
     bindSuggestionButtons();
 
     const addFreeItem = () => {
+      render();
+    });
+
+    document.querySelectorAll('[data-open-product]').forEach(btn => btn.addEventListener('click', () => {
+      state.selectedProductId = btn.dataset.openProduct;
+      render();
+    }));
+
+    on('#addFree', 'click', () => {
       const name = (document.querySelector('#freeName')?.value || '').trim();
       const qty = (document.querySelector('#freeQty')?.value || '').trim();
       if (!name) return;
@@ -769,6 +784,7 @@
 
     on('#addFree', 'click', addFreeItem);
     on('#freeName', 'keydown', e => { if (e.key === 'Enter') addFreeItem(); });
+    });
 
     document.querySelectorAll('[data-add-product]').forEach(btn => btn.addEventListener('click', () => {
       addProduct(btn.dataset.addProduct);
@@ -922,19 +938,6 @@
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
-  }
-
-  function showFatal(title, message) {
-    if (!app) return;
-    app.innerHTML = `
-      <main class="content">
-        <section class="card full" style="border-color:#f4c1bd; background:#fff7f7;">
-          <h2 style="margin-top:0;">⚠️ ${escapeHtml(title)}</h2>
-          <p class="muted">Bitte Seite neu laden. Falls es weiter auftritt, localStorage leeren.</p>
-          <pre style="white-space:pre-wrap; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px;">${escapeHtml(message || 'Unbekannter Fehler')}</pre>
-        </section>
-      </main>
-    `;
   }
 })();
 </script>
