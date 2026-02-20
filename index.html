@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoCart Demo</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --surface: #ffffff;
+      --text: #1d2433;
+      --muted: #5f6b82;
+      --primary: #1767ff;
+      --primary-2: #0f52cc;
+      --border: #d9dfea;
+      --ok: #0f9d58;
+      --warn: #f59e0b;
+      --bad: #d93025;
+      --shadow: 0 8px 22px rgba(29, 36, 51, 0.08);
+      --radius: 14px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1420;
+      --surface: #1a2232;
+      --text: #e9edf7;
+      --muted: #b5bfd2;
+      --primary: #6c95ff;
+      --primary-2: #547ee8;
+      --border: #2a3650;
+      --shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 920px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 82px;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      background: rgba(243, 245, 248, 0.95);
+      backdrop-filter: blur(7px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      font-size: 1.1rem;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    select, input[type="text"], input[type="number"], button {
+      font: inherit;
+    }
+
+    .store-select {
+      min-width: 128px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--text);
+    }
+
+    .theme-btn {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 40px;
+      min-width: 42px;
+      cursor: pointer;
+    }
+
+    .content {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .muted { color: var(--muted); }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .spaced {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: var(--primary);
+      color: white;
+      font-weight: 650;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease;
+      min-height: 42px;
+    }
+
+    .btn:hover { background: var(--primary-2); }
+    .btn:active { transform: scale(0.98); }
+    .btn.secondary {
+      background: #ecf2ff;
+      color: #0f4bc9;
+    }
+    .btn.ghost {
+      background: #f3f5f8;
+      color: var(--text);
+    }
+    .btn.danger { background: #e94a3f; }
+
+    .input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px;
+      min-height: 42px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .slider-wrap {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .slider-wrap input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .tabs {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 920px;
+      margin: 0 auto;
+      z-index: 12;
+    }
+
+    .tab {
+      border: none;
+      padding: 10px 8px 14px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 56px;
+    }
+    .tab.active { color: var(--primary); }
+
+    .section-title {
+      font-weight: 700;
+      font-size: 0.94rem;
+      letter-spacing: 0.15px;
+      margin: 2px 0 8px;
+      color: #2f3a4f;
+    }
+
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #fff;
+      transition: background 0.25s ease, transform 0.2s ease;
+    }
+
+    .item.done { background: #f5f7fb; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.76rem;
+      margin-right: 5px;
+      margin-top: 4px;
+      border: 1px solid transparent;
+    }
+
+    .fit-top { background: #e8f8ef; color: #0b7d44; border-color: #bae9cb; }
+    .fit-ok { background: #fff7e9; color: #9a6200; border-color: #ffe0a7; }
+    .fit-bad { background: #fdeceb; color: #a32117; border-color: #f4c1bd; }
+
+    .suggestions {
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .sugg {
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .sugg:last-child { border-bottom: none; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 22, 33, 0.48);
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      z-index: 20;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .drawer {
+      width: min(920px, 100%);
+      background: #fff;
+      border-radius: 18px 18px 0 0;
+      padding: 16px;
+      max-height: 90vh;
+      overflow: auto;
+      animation: slideUp 0.24s ease;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 76px;
+      background: #1f2c44;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      z-index: 24;
+      opacity: 0;
+      animation: popIn 2.2s ease forwards;
+    }
+
+    .community-list > .card { margin-bottom: 10px; }
+
+    .hidden { display: none; }
+
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn {
+      0% { opacity: 0; transform: translate(-50%, 10px); }
+      10%, 80% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -8px); }
+    }
+
+    @media (min-width: 820px) {
+      .content {
+        grid-template-columns: 1fr 1fr;
+      }
+      .full { grid-column: 1 / -1; }
+      .drawer { border-radius: 18px; margin-bottom: 40px; }
+      .modal { align-items: center; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app"></div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'ecocart_demo_v1';
+  const defaultPrefs = { co2: 50, health: 50, ethics: 50, animal: 50, price: 50 };
+  const criterias = [
+    { key: 'co2', label: 'Klima/CO2' },
+    { key: 'health', label: 'Gesundheit/Nährwerte' },
+    { key: 'ethics', label: 'Arbeitsbedingungen/Ethik' },
+    { key: 'animal', label: 'Tierwohl/Landwirtschaft' },
+    { key: 'price', label: 'Preis/Finanzielle Nachhaltigkeit' }
+  ];
+
+  const schemasByStore = {
+    REWE: ['Obst/Gemüse', 'Backwaren', 'Milchprodukte', 'Fleisch/Fisch', 'Trockenware', 'Tiefkühl', 'Getränke', 'Drogerie', 'Kasse'],
+    EDEKA: ['Obst/Gemüse', 'Backwaren', 'Milchprodukte', 'Fleisch/Fisch', 'Getränke', 'Trockenware', 'Tiefkühl', 'Drogerie', 'Kasse'],
+    Lidl: ['Backwaren', 'Obst/Gemüse', 'Milchprodukte', 'Trockenware', 'Fleisch/Fisch', 'Tiefkühl', 'Getränke', 'Drogerie', 'Kasse'],
+    Aldi: ['Obst/Gemüse', 'Backwaren', 'Trockenware', 'Milchprodukte', 'Fleisch/Fisch', 'Tiefkühl', 'Getränke', 'Drogerie', 'Kasse'],
+    dm: ['Drogerie', 'Getränke', 'Trockenware', 'Kasse']
+  };
+
+  const categoryToSection = {
+    produce: 'Obst/Gemüse',
+    bakery: 'Backwaren',
+    dairy: 'Milchprodukte',
+    meat: 'Fleisch/Fisch',
+    pantry: 'Trockenware',
+    frozen: 'Tiefkühl',
+    drinks: 'Getränke',
+    personal: 'Drogerie'
+  };
+
+  const brandReputation = {
+    Demeter: { ethics: 88, animal: 92 },
+    Nestlé: { ethics: 35, animal: 45 },
+    'REWE Bio': { ethics: 78, animal: 75 },
+    'ja!': { ethics: 58, animal: 55 },
+    Alnatura: { ethics: 82, animal: 85 },
+    Milbona: { ethics: 62, animal: 58 }
+  };
+
+  const catalog = [
+    mkProd('p1', 'Joghurt 3,8% 500g', 'dairy', { fat: 3.8, grams: 500, brand: 'REWE Bio', brandType: 'bio' }, ['REWE', 'EDEKA'], score(66, 70, 78, 72, 48, 0.86, false), price('1,19', '1,59', '1,29', '1,69')),
+    mkProd('p2', 'Joghurt 1,5% 500g', 'dairy', { fat: 1.5, grams: 500, brand: 'ja!', brandType: 'eigenmarke' }, ['REWE', 'Lidl', 'Aldi'], score(59, 74, 58, 57, 76, 0.8, false), price('0,79', '1,19', '0,75', '1,09')),
+    mkProd('p3', 'Skyr 450g', 'dairy', { fat: 0.2, grams: 450, brand: 'Milbona', brandType: 'eigenmarke' }, ['Lidl', 'REWE', 'EDEKA'], score(61, 83, 62, 60, 68, 0.88, false), price('0,99', '1,39', '0,95', '1,29')),
+    mkProd('p4', 'Griechischer Joghurt 10% 500g', 'dairy', { fat: 10, grams: 500, brand: 'Nestlé', brandType: 'brand' }, ['REWE', 'EDEKA', 'Lidl'], score(41, 45, 30, 38, 64, 0.67, true), price('1,29', '1,89', '1,39', '1,99')),
+    mkProd('p5', 'Bio Bananen 1kg', 'produce', { grams: 1000, brand: 'Demeter', brandType: 'bio' }, ['REWE', 'EDEKA', 'dm'], score(78, 72, 90, 87, 42, 0.81, true), price('2,19', '2,79', '2,29', '2,99')),
+    mkProd('p6', 'Vollkornbrot 500g', 'bakery', { grams: 500, brand: 'ja!', brandType: 'eigenmarke' }, ['REWE', 'Aldi', 'Lidl'], score(60, 79, 58, 56, 74, 0.84, false), price('1,09', '1,69', '0,99', '1,39')),
+    mkProd('p7', 'Haferflocken 1kg', 'pantry', { grams: 1000, brand: 'Alnatura', brandType: 'bio' }, ['REWE', 'dm', 'EDEKA'], score(82, 88, 84, 80, 52, 0.91, false), price('1,99', '2,89', '2,09', '2,99')),
+    mkProd('p8', 'Hähnchenbrust 400g', 'meat', { grams: 400, brand: 'Brand', brandType: 'brand' }, ['REWE', 'EDEKA', 'Lidl', 'Aldi'], score(26, 58, 40, 21, 66, 0.71, true), price('3,29', '4,49', '3,19', '4,29')),
+    mkProd('p9', 'Lachsfilet 300g', 'frozen', { grams: 300, brand: 'Brand', brandType: 'brand' }, ['REWE', 'EDEKA'], score(44, 76, 50, 34, 39, 0.63, true), price('4,79', '6,79', '4,99', '7,49')),
+    mkProd('p10', 'Mineralwasser 1,5L', 'drinks', { grams: 1500, brand: 'ja!', brandType: 'eigenmarke' }, ['REWE', 'EDEKA', 'Lidl', 'Aldi', 'dm'], score(48, 60, 57, 59, 85, 0.9, false), price('0,39', '0,79', '0,35', '0,69')),
+    mkProd('p11', 'Spülmittel Zitrone', 'personal', { grams: 500, brand: 'dmBio', brandType: 'bio' }, ['dm', 'REWE', 'EDEKA'], score(64, 62, 70, 76, 56, 0.7, true), price('1,49', '2,79', '1,59', '2,99')),
+    mkProd('p12', 'Kichererbsen 400g', 'pantry', { grams: 400, brand: 'REWE Bio', brandType: 'bio' }, ['REWE', 'EDEKA', 'dm'], score(79, 86, 74, 78, 61, 0.87, false), price('0,99', '1,39', '1,09', '1,59')),
+    mkProd('p13', 'Apfelsaft naturtrüb 1L', 'drinks', { grams: 1000, brand: 'Brand', brandType: 'brand' }, ['REWE', 'Lidl', 'Aldi', 'EDEKA'], score(55, 64, 52, 54, 66, 0.77, false), price('1,29', '1,89', '1,19', '1,79'))
+  ];
+
+  const defaultCommunity = [
+    { id: 'c1', name: 'Speedrun Familie', market: 'REWE', votes: 214, version: '1.2', sections: ['Obst/Gemüse', 'Milchprodukte', 'Backwaren', 'Trockenware', 'Tiefkühl', 'Getränke', 'Drogerie', 'Kasse'] },
+    { id: 'c2', name: 'Mealprep Fokus', market: 'EDEKA', votes: 162, version: '1.2', sections: ['Obst/Gemüse', 'Trockenware', 'Fleisch/Fisch', 'Milchprodukte', 'Tiefkühl', 'Getränke', 'Kasse'] },
+    { id: 'c3', name: 'Express 10 Min', market: 'Lidl', votes: 99, version: '1.2', sections: ['Backwaren', 'Obst/Gemüse', 'Milchprodukte', 'Trockenware', 'Kasse'] },
+    { id: 'c4', name: 'Drogerie + Food', market: 'dm', votes: 77, version: '1.2', sections: ['Drogerie', 'Getränke', 'Trockenware', 'Kasse'] }
+  ];
+
+  const app = document.getElementById('app');
+  let state;
+
+  window.addEventListener('error', (event) => {
+    showFatal('Unerwarteter Fehler beim Laden', event.message);
+  });
+
+  try {
+    state = loadState();
+    applyTheme();
+    render();
+  } catch (error) {
+    showFatal('Initialisierung fehlgeschlagen', error && error.message ? error.message : String(error));
+  }
+
+  function mkProd(id, name, category, attrs, stores, scores, priceRange) {
+    return { id, name, category, attrs, storeAvailability: stores, scores, priceRange };
+  }
+
+  function score(co2, health, ethics, animal, price, confidence, estimated) {
+    return { co2, health, ethics, animal, price, confidence, estimated,
+      reasons: {
+        co2: co2 > 70 ? 'Niedrige Emissionsintensität im Vergleich zur Kategorie.' : 'Durchschnittliche bis erhöhte Emissionen in der Lieferkette.',
+        health: health > 70 ? 'Ausgewogenes Nährwertprofil laut Produktdaten.' : 'Enthält mehr Fett/Zucker als Alternativen.',
+        ethics: ethics > 70 ? 'Lieferkette mit besseren Arbeitsstandards bewertet.' : 'Uneinheitliche Hinweise zu Arbeitsbedingungen.',
+        animal: animal > 70 ? 'Höhere Standards bei Herkunft und Landwirtschaft.' : 'Konventionelle Produktion mit niedrigeren Tierwohlindikatoren.',
+        price: price > 70 ? 'Preislich günstig im Segment verfügbar.' : 'Preislich eher im Mittelfeld oder darüber.'
+      }
+    };
+  }
+
+  function price(min, max, min2, max2) {
+    return { REWE: `${min}–${max} €`, EDEKA: `${min2}–${max2} €`, Lidl: `${min}–${max} €`, Aldi: `${min}–${max} €`, dm: `${min2}–${max2} €` };
+  }
+
+  function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          tab: parsed.tab || 'list',
+          store: parsed.store || 'REWE',
+          activeSchema: parsed.activeSchema || schemasByStore.REWE,
+          prefs: parsed.prefs || null,
+          listItems: parsed.listItems || [],
+          sustainabilityView: parsed.sustainabilityView || false,
+          search: '',
+          selectedProductId: null,
+          toast: '',
+          communitySchemas: parsed.communitySchemas || defaultCommunity,
+          theme: parsed.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+          showNewSchemaForm: false,
+          newSchema: { name: '', market: 'REWE', sectionsText: '' }
+        };
+      } catch (e) {}
+    }
+    return {
+      tab: 'list',
+      store: 'REWE',
+      activeSchema: schemasByStore.REWE,
+      prefs: null,
+      listItems: [],
+      sustainabilityView: false,
+      search: '',
+      selectedProductId: null,
+      toast: '',
+      communitySchemas: defaultCommunity,
+      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      showNewSchemaForm: false,
+      newSchema: { name: '', market: 'REWE', sectionsText: '' }
+    };
+  }
+
+  function persist() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      tab: state.tab,
+      store: state.store,
+      activeSchema: state.activeSchema,
+      prefs: state.prefs,
+      listItems: state.listItems,
+      sustainabilityView: state.sustainabilityView,
+      communitySchemas: state.communitySchemas,
+      theme: state.theme
+    }));
+  }
+
+  function weightedScore(scores) {
+    const prefs = state.prefs || defaultPrefs;
+    const sum = Object.values(prefs).reduce((a, b) => a + b, 0) || 1;
+    const w = Object.fromEntries(Object.entries(prefs).map(([k, v]) => [k, v / sum]));
+    return Math.round(
+      scores.co2 * w.co2 +
+      scores.health * w.health +
+      scores.ethics * w.ethics +
+      scores.animal * w.animal +
+      scores.price * w.price
+    );
+  }
+
+  function scoreLabel(value) {
+    if (value >= 70) return ['Top Fit', 'fit-top'];
+    if (value >= 45) return ['OK', 'fit-ok'];
+    return ['kritisch', 'fit-bad'];
+  }
+
+  function render() {
+    app.innerHTML = `
+      ${renderHeader()}
+      <main class="content">${state.prefs ? renderTabContent() : renderOnboarding()}</main>
+      ${renderTabs()}
+      ${renderModal()}
+      ${state.toast ? `<div class="toast">${state.toast}</div>` : ''}
+    `;
+    bindEvents();
+  }
+
+  function renderHeader() {
+    return `
+      <header class="header">
+        <div class="brand">🛒 EcoCart</div>
+        <div class="row" style="margin-left:auto;">
+          <button class="theme-btn" id="themeToggle" aria-label="Darkmode umschalten">${state.theme === 'dark' ? '☀️' : '🌙'}</button>
+          <select aria-label="Supermarkt" class="store-select" id="storeSelect">
+            ${Object.keys(schemasByStore).map(store => `<option ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
+          </select>
+        </div>
+      </header>
+    `;
+  }
+
+  function renderOnboarding() {
+    const pref = state.prefs || defaultPrefs;
+    return `
+      <section class="card full">
+        <h2>Willkommen! Dein Nachhaltigkeits-Profil</h2>
+        <p class="muted">Setze deine Prioritäten. Du kannst alles später im Profil ändern.</p>
+        ${criterias.map(c => `
+          <div class="slider-wrap">
+            <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
+            <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
+          </div>
+        `).join('')}
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="savePrefs">Profil speichern</button>
+          <span class="muted">Werte werden lokal gespeichert.</span>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderTabContent() {
+    if (state.tab === 'community') return renderCommunity();
+    if (state.tab === 'profile') return renderProfile();
+    return renderListTab();
+  }
+
+  function renderSuggestionsHtml(searchTerm) {
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) return '';
+    const filtered = catalog
+      .filter(p => p.storeAvailability.includes(state.store) && p.name.toLowerCase().includes(term))
+      .slice(0, 8);
+    return filtered.map(p => `
+      <button class="sugg" data-open-product="${p.id}">
+        ${p.name}
+        ${state.store === 'REWE' ? `<span class="muted"> · ${p.attrs.brandType === 'eigenmarke' ? 'ja!' : (p.attrs.brandType === 'bio' ? 'REWE Bio' : 'Marke')}</span>` : ''}
+      </button>
+    `).join('') || '<div class="sugg">Keine Vorschläge</div>';
+  }
+
+  function renderListTab() {
+    const bySection = groupListItems();
+    return `
+      <section class="card full">
+        <div class="spaced"><h3>Produkte suchen</h3>
+          <label class="row"><input type="checkbox" id="sustainabilityToggle" ${state.sustainabilityView ? 'checked' : ''}> Nachhaltigkeitsansicht</label>
+        </div>
+        <input class="input" id="searchInput" type="text" value="${escapeHtml(state.search)}" placeholder="z.B. Joghurt">
+        <div class="suggestions ${state.search ? '' : 'hidden'}">
+          <div id="suggestionsList">${renderSuggestionsHtml(state.search)}</div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <input class="input" style="flex:2" id="freeName" type="text" placeholder="Artikel (Freitext)">
+          <input class="input" style="width:110px" id="freeQty" type="number" min="1" placeholder="Menge">
+          <button class="btn secondary" id="addFree">+ Hinzufügen</button>
+        </div>
+      </section>
+      <section class="card full">
+        <h3>Einkaufsliste · ${state.store}</h3>
+        <p class="muted">Sortiert nach aktivem Markt-Schema.</p>
+        ${renderSections(bySection.open, false)}
+        <h4>Erledigt</h4>
+        ${renderSections(bySection.done, true)}
+      </section>
+    `;
+  }
+
+  function renderSections(map, done) {
+    const schema = state.activeSchema || schemasByStore[state.store];
+    const sections = [...schema, 'Sonstiges'];
+    return sections.map(sec => {
+      const items = map[sec] || [];
+      if (!items.length) return '';
+      return `
+        <div class="section-title">${sec}</div>
+        ${items.map(item => renderItem(item, done)).join('')}
+      `;
+    }).join('') || `<p class="muted">${done ? 'Noch keine erledigten Items.' : 'Liste ist leer.'}</p>`;
+  }
+
+  function renderItem(item) {
+    const product = item.productId ? catalog.find(p => p.id === item.productId) : null;
+    const total = product ? weightedScore(product.scores) : null;
+    const label = total != null ? scoreLabel(total) : null;
+    return `
+      <div class="item ${item.done ? 'done' : ''}">
+        <div class="spaced">
+          <label class="row" style="font-weight:600;">
+            <input type="checkbox" data-toggle-item="${item.id}" ${item.done ? 'checked' : ''}>
+            ${escapeHtml(item.name)}${item.qty ? ` (${item.qty})` : ''}
+          </label>
+          <button class="btn ghost" data-delete-item="${item.id}">🗑️</button>
+        </div>
+        ${label ? `<span class="badge ${label[1]}">${label[0]} · ${total}</span>` : ''}
+        ${state.sustainabilityView && product ? renderSustainabilityBadges(product.scores) : ''}
+      </div>
+    `;
+  }
+
+  function renderSustainabilityBadges(scores) {
+    const b = [];
+    if (scores.co2 < 45) b.push('<span class="badge fit-bad">CO2 hoch</span>');
+    if (scores.health > 70) b.push('<span class="badge fit-top">Gesundheit top</span>');
+    if (scores.ethics < 45) b.push('<span class="badge fit-bad">Ethik kritisch</span>');
+    if (scores.price > 70) b.push('<span class="badge fit-ok">Preisfreundlich</span>');
+    return b.join('');
+  }
+
+  function renderCommunity() {
+    return `
+      <section class="community-list full">
+        ${state.communitySchemas.map(s => `
+          <article class="card">
+            <div class="spaced">
+              <h3>${escapeHtml(s.name)}</h3>
+              <span class="muted">Version ${s.version}</span>
+            </div>
+            <p class="muted">${s.market} · 👍 ${s.votes} Votes</p>
+            <p>${s.sections.join(' → ')}</p>
+            <button class="btn secondary" data-adopt-schema="${s.id}">Schema übernehmen</button>
+          </article>
+        `).join('')}
+        <section class="card">
+          <button class="btn" id="toggleNewSchema">Neues Schema (Mock)</button>
+          ${state.showNewSchemaForm ? `
+            <div style="margin-top:10px; display:grid; gap:8px;">
+              <input class="input" id="schemaName" placeholder="Name" value="${escapeHtml(state.newSchema.name)}">
+              <select class="store-select" id="schemaMarket">
+                ${Object.keys(schemasByStore).map(s => `<option ${s === state.newSchema.market ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+              <textarea class="input" id="schemaSections" rows="3" placeholder="Sektionen komma-getrennt">${escapeHtml(state.newSchema.sectionsText)}</textarea>
+              <button class="btn" id="saveSchema">Schema speichern</button>
+            </div>` : ''}
+        </section>
+      </section>
+    `;
+  }
+
+  function renderProfile() {
+    const pref = state.prefs || defaultPrefs;
+    return `
+      <section class="card full">
+        <h3>Profil & Gewichte</h3>
+        ${criterias.map(c => `
+          <div class="slider-wrap">
+            <div class="spaced"><strong>${c.label}</strong><span data-slider-value="${c.key}">${pref[c.key]}</span></div>
+            <input type="range" min="0" max="100" value="${pref[c.key]}" data-slider="${c.key}">
+          </div>
+        `).join('')}
+        <button class="btn" id="savePrefs" style="margin-top:12px;">Speichern</button>
+      </section>
+      <section class="card full">
+        <h3>Aktives Schema</h3>
+        <p>${(state.activeSchema || []).join(' → ')}</p>
+      </section>
+    `;
+  }
+
+  function renderModal() {
+    if (!state.selectedProductId) return '';
+    const p = catalog.find(x => x.id === state.selectedProductId);
+    if (!p) return '';
+    const scoreTotal = weightedScore(withBrandSignal(p));
+    const alternatives = catalog
+      .filter(x => x.id !== p.id && x.category === p.category && x.storeAvailability.includes(state.store))
+      .sort((a, b) => weightedScore(withBrandSignal(b)) - weightedScore(withBrandSignal(a)))
+      .slice(0, 2);
+    return `
+      <div class="modal" id="closeModalBg">
+        <section class="drawer" role="dialog" aria-modal="true">
+          <div class="spaced">
+            <h3>${p.name}</h3>
+            <button class="btn ghost" id="closeModal">✕</button>
+          </div>
+          <p class="muted">Marke: ${p.attrs.brand} · ${p.attrs.brandType}</p>
+          <p><strong>Gesamt-Score:</strong> ${scoreTotal}/100 (${scoreLabel(scoreTotal)[0]})</p>
+          ${criterias.map(c => {
+            const sc = withBrandSignal(p)[c.key];
+            return `<div class="spaced"><span>${c.label}</span><strong>${sc}</strong></div><p class="muted" style="margin:2px 0 8px;">${p.scores.reasons[c.key]}</p>`;
+          }).join('')}
+          <p class="muted">Confidence: ${withBrandSignal(p).confidence.toFixed(2)} ${withBrandSignal(p).estimated ? '· geschätzt' : ''}</p>
+          <p><strong>Preisrange:</strong> ${p.priceRange[state.store] || 'k.A.'}</p>
+          <button class="btn secondary" id="showAlt">Günstigere Alternativen</button>
+          <div id="alts" class="hidden" style="margin-top:8px;">
+            ${alternatives.map(a => `<div class="item">${a.name} · ${a.priceRange[state.store] || 'k.A.'}</div>`).join('') || '<p class="muted">Keine Alternativen gefunden.</p>'}
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" data-add-product="${p.id}">Zur Liste hinzufügen</button>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderTabs() {
+    if (!state.prefs) return '';
+    return `
+      <nav class="tabs">
+        ${tabBtn('list', '🧾 Liste')}
+        ${tabBtn('community', '👥 Community')}
+        ${tabBtn('profile', '⚙️ Profil')}
+      </nav>
+    `;
+  }
+
+  function tabBtn(key, label) {
+    return `<button class="tab ${state.tab === key ? 'active' : ''}" data-tab="${key}">${label}</button>`;
+  }
+
+  function bindEvents() {
+    const on = (sel, ev, fn) => {
+      const el = document.querySelector(sel);
+      if (el) el.addEventListener(ev, fn);
+    };
+
+    on('#storeSelect', 'change', e => {
+      state.store = e.target.value;
+      if (!state.activeSchema || !state.activeSchema.length) state.activeSchema = schemasByStore[state.store];
+      persistRender();
+    });
+
+    on('#themeToggle', 'click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      persistRender();
+    });
+
+    document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
+      state.tab = btn.dataset.tab;
+      persistRender();
+    }));
+
+    document.querySelectorAll('[data-slider]').forEach(sl => {
+      sl.addEventListener('input', e => {
+        if (!state.prefs) state.prefs = { ...defaultPrefs };
+        state.prefs[e.target.dataset.slider] = Number(e.target.value);
+        const valueEl = document.querySelector(`[data-slider-value="${e.target.dataset.slider}"]`);
+        if (valueEl) valueEl.textContent = e.target.value;
+      });
+    });
+
+    on('#savePrefs', 'click', () => {
+      if (!state.prefs) state.prefs = { ...defaultPrefs };
+      toast('Profil gespeichert');
+      persistRender();
+    });
+
+    on('#searchInput', 'input', e => {
+      state.search = e.target.value;
+      updateSuggestions();
+    });
+
+    bindSuggestionButtons();
+
+    const addFreeItem = () => {
+      const name = (document.querySelector('#freeName')?.value || '').trim();
+      const qty = (document.querySelector('#freeQty')?.value || '').trim();
+      if (!name) return;
+      state.listItems.unshift({ id: uid(), name, qty, done: false, section: 'Sonstiges', productId: null });
+      state.search = '';
+      persistRender();
+      toast('Freitext-Item hinzugefügt');
+    };
+
+    on('#addFree', 'click', addFreeItem);
+    on('#freeName', 'keydown', e => { if (e.key === 'Enter') addFreeItem(); });
+
+    document.querySelectorAll('[data-add-product]').forEach(btn => btn.addEventListener('click', () => {
+      addProduct(btn.dataset.addProduct);
+    }));
+
+    document.querySelectorAll('[data-toggle-item]').forEach(chk => chk.addEventListener('change', () => {
+      const it = state.listItems.find(x => x.id === chk.dataset.toggleItem);
+      if (it) it.done = !it.done;
+      persistRender();
+    }));
+
+    document.querySelectorAll('[data-delete-item]').forEach(del => del.addEventListener('click', () => {
+      state.listItems = state.listItems.filter(x => x.id !== del.dataset.deleteItem);
+      persistRender();
+    }));
+
+    on('#sustainabilityToggle', 'change', e => {
+      state.sustainabilityView = e.target.checked;
+      persistRender();
+    });
+
+    on('#closeModal', 'click', closeModal);
+    on('#closeModalBg', 'click', e => { if (e.target.id === 'closeModalBg') closeModal(); });
+    on('#showAlt', 'click', () => document.querySelector('#alts')?.classList.toggle('hidden'));
+
+    document.querySelectorAll('[data-adopt-schema]').forEach(btn => btn.addEventListener('click', () => {
+      const sch = state.communitySchemas.find(s => s.id === btn.dataset.adoptSchema);
+      if (sch) {
+        state.activeSchema = sch.sections;
+        state.store = sch.market;
+        toast(`Schema „${sch.name}" übernommen`);
+        persistRender();
+      }
+    }));
+
+    on('#toggleNewSchema', 'click', () => {
+      state.showNewSchemaForm = !state.showNewSchemaForm;
+      render();
+    });
+
+    on('#schemaName', 'input', e => state.newSchema.name = e.target.value);
+    on('#schemaMarket', 'change', e => state.newSchema.market = e.target.value);
+    on('#schemaSections', 'input', e => state.newSchema.sectionsText = e.target.value);
+
+    on('#saveSchema', 'click', () => {
+      const sections = state.newSchema.sectionsText.split(',').map(s => s.trim()).filter(Boolean);
+      if (!state.newSchema.name || !sections.length) return toast('Bitte Name + Sektionen angeben');
+      state.communitySchemas.unshift({
+        id: uid(),
+        name: state.newSchema.name,
+        market: state.newSchema.market,
+        votes: 0,
+        version: '1.2',
+        sections
+      });
+      state.showNewSchemaForm = false;
+      state.newSchema = { name: '', market: 'REWE', sectionsText: '' };
+      toast('Community-Schema gespeichert');
+      persistRender();
+    });
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme || 'light');
+  }
+
+  function bindSuggestionButtons() {
+    document.querySelectorAll('[data-open-product]').forEach(btn => btn.addEventListener('click', () => {
+      state.selectedProductId = btn.dataset.openProduct;
+      render();
+    }));
+  }
+
+  function updateSuggestions() {
+    const suggestionsBox = document.querySelector('.suggestions');
+    const list = document.querySelector('#suggestionsList');
+    if (!suggestionsBox || !list) return;
+    const hasTerm = !!state.search.trim();
+    suggestionsBox.classList.toggle('hidden', !hasTerm);
+    if (!hasTerm) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = renderSuggestionsHtml(state.search);
+    bindSuggestionButtons();
+  }
+
+  function withBrandSignal(product) {
+    const base = { ...product.scores };
+    const rep = brandReputation[product.attrs.brand];
+    if (rep) {
+      if (rep.ethics) base.ethics = Math.round((base.ethics * 0.8) + (rep.ethics * 0.2));
+      if (rep.animal) base.animal = Math.round((base.animal * 0.8) + (rep.animal * 0.2));
+    }
+    return base;
+  }
+
+  function addProduct(id) {
+    const p = catalog.find(x => x.id === id);
+    if (!p) return;
+    const section = categoryToSection[p.category] || 'Sonstiges';
+    state.listItems.unshift({ id: uid(), name: p.name, qty: '', done: false, section, productId: p.id });
+    state.selectedProductId = null;
+    state.search = '';
+    persistRender();
+    toast('Zur Liste hinzugefügt');
+  }
+
+  function groupListItems() {
+    const open = {};
+    const done = {};
+    const schema = state.activeSchema || schemasByStore[state.store];
+
+    for (const item of state.listItems) {
+      const target = item.done ? done : open;
+      let sec = item.section || 'Sonstiges';
+      if (!schema.includes(sec)) sec = 'Sonstiges';
+      if (!target[sec]) target[sec] = [];
+      target[sec].push(item);
+    }
+    return { open, done };
+  }
+
+  function closeModal() {
+    state.selectedProductId = null;
+    render();
+  }
+
+  function persistRender() {
+    persist();
+    render();
+  }
+
+  function toast(msg) {
+    state.toast = msg;
+    render();
+    setTimeout(() => {
+      state.toast = '';
+      render();
+    }, 2000);
+  }
+
+  function uid() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function showFatal(title, message) {
+    if (!app) return;
+    app.innerHTML = `
+      <main class="content">
+        <section class="card full" style="border-color:#f4c1bd; background:#fff7f7;">
+          <h2 style="margin-top:0;">⚠️ ${escapeHtml(title)}</h2>
+          <p class="muted">Bitte Seite neu laden. Falls es weiter auftritt, localStorage leeren.</p>
+          <pre style="white-space:pre-wrap; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px;">${escapeHtml(message || 'Unbekannter Fehler')}</pre>
+        </section>
+      </main>
+    `;
+  }
+})();
+</script>
+</body>
+</html>
